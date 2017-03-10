@@ -19,6 +19,7 @@ Robot: should it be a thread or a monitor?
 
 - Thread: More intuitive. Easier to extend???
 - Monitor: Simpler system, easier to implement. (Would it result in actually 2 arms if used by sensor and inspector thread???)
+	- Using `synchronized` keyword on a single moving method can achieve the desired effect on solution 1, but for solution 2???
 
 For situation below:
 
