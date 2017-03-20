@@ -9,11 +9,6 @@ public class Producer extends BicycleHandlingThread {
     // the belt to which the producer puts the bicycles
     protected Belt belt;
 
-    // TODO
-    public String getMyName() {
-        return "Producer";
-    }
-
     /**
      * Create a new producer to feed a given belt
      */
@@ -27,7 +22,6 @@ public class Producer extends BicycleHandlingThread {
      * Continually tries to place bicycles on the belt at random intervals.
      */
     public void run() {
-        System.out.println(BicycleHandlingThread.getCurrentThreadName() + " started");
         while (!isInterrupted()) {
             try {
                 // put a new bicycle on the belt

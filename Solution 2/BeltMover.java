@@ -8,11 +8,6 @@ public class BeltMover extends BicycleHandlingThread {
     // the belt to be handled
     protected Belt belt;
 
-    // TODO
-    public String getMyName() {
-        return "BeltMover";
-    }
-
     /**
      * Create a new BeltMover with a belt to move
      */
@@ -26,7 +21,6 @@ public class BeltMover extends BicycleHandlingThread {
      * is a bicycle on the belt which is not in the last position.
      */
     public void run() {
-        System.out.println(BicycleHandlingThread.getCurrentThreadName() + " started");
         while (!isInterrupted()) {
             try {
                 // spend BELT_MOVE_TIME milliseconds moving the belt

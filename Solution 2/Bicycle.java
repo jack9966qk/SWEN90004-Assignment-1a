@@ -12,20 +12,8 @@ public class Bicycle {
     // specifies whether the bicycle is defective
     protected boolean defective = false;
 
-
-
-    public boolean isInspected() {
-        return inspected;
-    }
-
-    public void setInspected(boolean inspected) {
-        this.inspected = inspected;
-    }
-
-    // TODO
+    // specifies whether the bicycle is inspected
     protected boolean inspected = false;
-
-
 
     // the ID of this bicycle
     protected int id;
@@ -42,6 +30,22 @@ public class Bicycle {
             	defective = true;
             }
         }
+    }
+
+    /**
+     * Get whether the bicycle is inspected
+     * @return true if and only if the bicycle is inspected
+     */
+    public boolean isInspected() {
+        return inspected;
+    }
+
+    /**
+     * Set whether the bicycle is inspected
+     * @param inspected true if and only if the bicycle is inspected
+     */
+    public void setInspected(boolean inspected) {
+        this.inspected = inspected;
     }
 
     /**

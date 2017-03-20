@@ -1,59 +1,52 @@
 /**
- * Created by Jack on 8/3/2017.
+ * The sensor that scans bicycles, determining if a bicycle needs inspection
+ * Created by Jack on 11/3/2017.
  */
-public class Sensor extends BicycleHandlingThread {
+public class Sensor {
 
-    // the belt to be handled
-    protected final Belt belt;
-
-    // TODO
-    public String getMyName() {
-        return "Sensor";
-    }
-
-    // robot arm
+    // The robot arm to call when a bicycle needs to be moved
     protected Robot robot;
 
-    protected int index;
+    // The destination where a bicycle is going to be moved to
+    protected BicycleContainer dest;
 
-    public Sensor(Belt belt, Robot robot, int index) {
-        this.belt = belt;
+    // The destination index where a bicycle is going to be moved to
+    protected int destIndex = -1;
+
+    /**
+     * Create a new sensor object
+     * @param dest
+     *            The destination where a bicycle is going to be moved to
+     * @param destIndex
+     *            The destination index where a bicycle is going to be moved to
+     * @param robot
+     *            The robot arm to call when a bicycle needs to be moved
+     */
+    public Sensor(BicycleContainer dest, int destIndex, Robot robot) {
         this.robot = robot;
-        this.index = index;
+        this.dest = dest;
+        this.destIndex = destIndex;
     }
 
 
-    public void run() {
-        Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " started");
-        try {
-            while (!isInterrupted()) {
-
-//                Sim.debugPrint("a");
-//                waitForTaggedBicycle();
-//                Sim.debugPrint("b");
-//                robot.moveBicycleFromBeltToInspector();
-//                Sim.debugPrint("c");
-
-                synchronized (belt) {
-                    Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " acquires lock");
-                    while (true) {
-                        Bicycle b = belt.peek(index);
-                        if (b != null && b.isTagged() && !b.isInspected()) {
-                            break;
-                        }
-                        Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for tagged bicycle to arrive");
-                        belt.wait(); // wait for belt mover to bring new bicycle
-                    }
-
-                    Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " found tagged bicycle, call robot to move to inspector");
-                    robot.moveBicycleFromBeltToInspector();
-                }
-
-            }
-        } catch (InterruptedException e) {
-            this.interrupt();
-        } catch (OverloadException e) {
-            e.printStackTrace();
+    /**
+     * Determine if the specified bicycle needs to be moved away,
+     * call the robot arm to pick the bicycle if needed
+     * @param container
+     *            The container where bicycle is to be scanned
+     * @param index
+     *            The index of container where bicycle is to be scanned
+     * @throws InterruptedException
+     *            if the thread executing is interrupted
+     */
+    public void handleBicycle(BicycleContainer container, int index)
+        throws InterruptedException {
+        Bicycle bicycle = container.peek(index);
+        if (bicycle == null) {
+            return;
+        }
+        if (bicycle.isTagged() && !bicycle.isInspected()) {
+            robot.pickBicycle(container, index, dest, destIndex);
         }
     }
 }

@@ -1,0 +1,15 @@
+# SWEN90004 Assignment 1a Reflection
+
+Neither of the two systems work perfectly in this implementation, unfortunately. Regarding safety, all tagged bicycles must be moved to inspector before going over segment 3, and all bicycles taken by consumer are properly inspected for both solutions. However, two types of deadlocks are discovered by experimenting on the systems, therefore liveliness is not satisfied.
+
+The first type of deadlock happens on the robot arm in both solutions, when a bicycle is being inspected in the inspector, while another tagged bicycle arrives at segment 3, detected by sensor, then taken by robot arm. The robot arm intends to move the bicycle to inspector, which is occupied at the moment, while for the inspector to accept next bicycle, the current one must be taken away by the robot arm, therefore the two components waits for each other, forming a deadlock.
+
+The problem could be solved by preventing the arm from accepting new moving task to inspector when inspector is occupied. In other words, the arm should serve only the inspector until inpsected bicycle is moved to desired location. This is necessary for system liveliness without adding extra components.
+
+Another solution would be adding a second robot arm, so that the second arm can be used if one of them is occupied. Although this solution solves the problem and increases overall efficiency, it introduces new components to the system, making it more complex. Also, if the robot arm usage order remains arbitrary, more robot arms will be requried if the moving sequence of bicycles gets longer. For example, if inspector is separated into two components, 3 robot arms are needed for the sequence `Belt->A->B->(Belt/Short Belt)`, in the case where A and B are both occupied, while two robot arms are holding bicycles to be moved to A and B respectively.
+
+The second type of deadlock appears to be similar, but only happens in Solution 1. It happens when a bicycle leaves segment 3, and a second tagged bicycle arrives at segment 3 before it returns. In this case, the order of robot arm usage does not matter, and deadlock happens either between robot arm and inspector (as previously discussed), or between robot arm and belt (if arm serves inspector first). It would happen even if bicycles are transferred directly between components, in that case it would be a deadlock between inspector and belt.
+
+Similar to the last type of deadlock, another robot arm is helpful. Since the second robot arm acts effectively as a temporary storage, segment 3 or inspector can be cleared for bicycle to arrive. This also means having one arm with a temporary storage achieves similar result, although performance is slightly worse. Both can be regarded as implementations of swap operation.
+
+Without adding new components, the deadlock could be avoided by preventing new bicycles from being moved to segment 3, until the last bicycle taken away has returned. However it has a huge negative effect on efficiency, as the whole detect-inspect-return process blocks belt movement.

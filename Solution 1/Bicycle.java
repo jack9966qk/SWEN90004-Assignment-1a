@@ -12,7 +12,8 @@ public class Bicycle {
     // specifies whether the bicycle is defective
     protected boolean defective = false;
 
-
+    // NOTE specifies whether the bicycle is inspected
+    protected boolean inspected = false;
 
     public boolean isInspected() {
         return inspected;
@@ -21,11 +22,6 @@ public class Bicycle {
     public void setInspected(boolean inspected) {
         this.inspected = inspected;
     }
-
-    // TODO
-    protected boolean inspected = false;
-
-
 
     // the ID of this bicycle
     protected int id;

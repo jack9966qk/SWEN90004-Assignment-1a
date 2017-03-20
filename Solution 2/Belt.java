@@ -1,12 +1,9 @@
-import jdk.nashorn.internal.runtime.Debug;
-
-import java.util.concurrent.ThreadFactory;
-import java.util.function.Predicate;
-
 /**
  * The bicycle quality control belt
  */
-public class Belt  {
+public class Belt implements BicycleContainer {
+
+    protected String name = "Belt";
 
     // the items in the belt segments
     protected Bicycle[] segment;
@@ -17,21 +14,40 @@ public class Belt  {
     // to help format output trace
     final private static String indentation = "                  ";
 
-    // TODO
-    protected boolean waitingForPutBack = false;
+    // sensors installed on belt segments
+    protected Sensor[] sensors;
 
-    // TODO
-    protected int sensorIdx;
 
     /**
      * Create a new, empty belt, initialised as empty
+     * @param beltLength
+     *            length of belt, which is the number of segments
+     * @param name
+     *            a descriptive name of the belt
      */
-    public Belt(int sensorIdx) {
+    public Belt(int beltLength, String name) {
+        this.name = name;
+        this.beltLength = beltLength;
         segment = new Bicycle[beltLength];
         for (int i = 0; i < segment.length; i++) {
             segment[i] = null;
         }
-        this.sensorIdx = sensorIdx;
+
+        sensors = new Sensor[beltLength];
+        for (int i = 0; i < sensors.length; i++) {
+            sensors[i] = null;
+        }
+    }
+
+    /**
+     * Install a sensor on belt, installed sensor will be called when new bicycle arrives at segment.
+     * @param sensor
+     *            the sensor to be installed to belt
+     * @param index
+     *            the segment index where sensor is installed
+     */
+    public void putSensor(Sensor sensor, int index) {
+        sensors[index] = sensor;
     }
 
     /**
@@ -46,24 +62,43 @@ public class Belt  {
      */
     public synchronized void put(Bicycle bicycle, int index)
             throws InterruptedException {
-        
-        // while there is another bicycle in the way, block this thread
+
+    	// while there is another bicycle in the way, block this thread
         while (segment[index] != null) {
-            Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for space to put bicycle at" + index);
-            
             wait();
-            
         }
 
         // insert the element at the specified location
         segment[index] = bicycle;
 
         // make a note of the event in output trace
-        System.out.println(bicycle + " is put at " + (index+1));
+        System.out.println(name + ": " + bicycle + " arrived at segment " + (index+1));
 
         // notify any waiting threads that the belt has changed
         notifyAll();
-        
+    }
+
+    /**
+     * Take a bicycle off the belt at position
+     * @param index
+     *            the place to remove the bicycle
+     * @return the removed bicycle
+     * @throws InterruptedException
+     *            if the thread executing is interrupted
+     */
+    public synchronized Bicycle remove(int index) throws InterruptedException {
+        while (segment[index] == null) {
+            wait();
+        }
+
+        Bicycle bicycle = segment[index];
+        segment[index] = null;
+
+        System.out.print(indentation);
+        System.out.println(name + ": " + bicycle + " [ s" + (index+1) + " ] removed");
+
+        notifyAll();
+        return bicycle;
     }
 
     /**
@@ -71,19 +106,15 @@ public class Belt  {
      * 
      * @return the removed bicycle
      * @throws InterruptedException
-     *             if the thread executing is interrupted
+     *            if the thread executing is interrupted
      */
     public synchronized Bicycle getEndBelt() throws InterruptedException {
-        
 
         Bicycle bicycle;
 
         // while there is no bicycle at the end of the belt, block this thread
         while (segment[segment.length-1] == null) {
-            Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for bicycle to end");
-            
             wait();
-            
         }
 
         // get the next item
@@ -92,31 +123,11 @@ public class Belt  {
 
         // make a note of the event in output trace
         System.out.print(indentation + indentation);
-        System.out.println(bicycle + " departed");
+        System.out.println(name + ": " + bicycle + " departed");
 
         // notify any waiting threads that the belt has changed
         notifyAll();
-        
         return bicycle;
-    }
-
-
-    private synchronized boolean canMove() {
-        if (isEmpty() || segment[segment.length-1] != null) {
-            Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for belt to move");
-            return false;
-        } else if (waitingForPutBack) {
-            if (segment[sensorIdx-1] != null) {
-                Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for bicycle to be put back at " + (sensorIdx + 1));
-                return false;
-            }
-        } else if (segment[sensorIdx] != null) {
-            if (segment[sensorIdx].isTagged() && !segment[sensorIdx].isInspected()) {
-                Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for tagged bicycle to be removed at " + (sensorIdx + 1));
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -129,17 +140,9 @@ public class Belt  {
      */
     public synchronized void move() 
             throws InterruptedException, OverloadException {
-        
-
         // if there is something at the end of the belt, 
     	// or the belt is empty, do not move the belt
-//        while (isEmpty() || segment[segment.length-1] != null) {
-//            Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for belt to move")
-//            wait();
-//        }
-
-        // TODO
-        while (!canMove()) {
+        while (isEmpty() || segment[segment.length-1] != null) {
             wait();
         }
 
@@ -154,39 +157,27 @@ public class Belt  {
             if (this.segment[i-1] != null) {
                 System.out.println(
                 		indentation +
-                		this.segment[i-1] +
+                        name + ": " +
+                        this.segment[i-1] +
                         " [ s" + (i) + " -> s" + (i+1) +" ]");
             }
             segment[i] = segment[i-1];
         }
         segment[0] = null;
-//        Sim.debugPrint(indentation + this)
+//        System.out.println(indentation + this);
+
+
+        // NOTE
+        for (int i = 0; i < sensors.length; i++) {
+            Sensor sensor = sensors[i];
+            if (sensor != null) {
+                sensor.handleBicycle(this, i);
+            }
+        }
         
         // notify any waiting threads that the belt has changed
         notifyAll();
-
-        
     }
-
-
-    public synchronized Bicycle getAndWait() throws InterruptedException {
-        // TODO exception for null bicycle
-        Bicycle b = segment[sensorIdx];
-        segment[sensorIdx] = null;
-
-        this.waitingForPutBack = true;
-
-        notifyAll();
-
-        return b;
-    }
-
-    public synchronized void putAndStopWaitingFor(Bicycle bicycle)
-            throws InterruptedException {
-        put(bicycle, sensorIdx);
-        waitingForPutBack = false;
-    }
-
 
     /**
      * @return the maximum size of this belt
@@ -223,11 +214,20 @@ public class Belt  {
         return true;
     }
 
+    // rewritten to print belt name and sensor
     public String toString() {
-        return java.util.Arrays.toString(segment);
+        String str = name + ": [ ";
+        for (int i = 0; i < segment.length; i++) {
+            String sensorLabel = sensors[i] != null ? "(s)" : "";
+            String bicycle = segment[i] != null ? segment[i].toString() : "";
+            str += String.format("%12s,", bicycle + sensorLabel);
+        }
+        str += " ]";
+        return str;
     }
 
-    /*
+    /**
+     * Get the final position of the belt
      * @return the final position on the belt
      */
     public int getEndPos() {

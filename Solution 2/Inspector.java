@@ -1,94 +1,133 @@
-import java.util.Random;
-
 /**
- * Created by Jack on 8/3/2017.
+ * The inspector of bicycle, checks if bicycle is defective, removes tag if not
+ * Created by Jack on 11/3/2017.
  */
-public class Inspector extends BicycleHandlingThread {
+public class Inspector extends BicycleHandlingThread implements BicycleContainer {
 
-    protected Bicycle bicycle;
+    // The bicycle in the inspector
+    protected Bicycle bicycle = null;
+
+    // The destination of inspected bicycle
+    protected BicycleContainer dest = null;
+
+    // The destination index of inspected bicycle
+    protected int destIndex = -1;
+
+    // The robot arm to use after inspection
     protected Robot robot;
-    final private static String indentation = "                  ";
 
-
-    // TODO
-    public String getMyName() {
-        return "Inspector";
-    }
-    public Inspector(Robot robot) {
+    /**
+     * Create a new inspector
+     * @param dest      The destination of inspected bicycle
+     * @param destIndex The destination index of inspected bicycle
+     * @param robot     The robot arm to use after inspection
+     */
+    public Inspector(BicycleContainer dest, int destIndex, Robot robot) {
+        this.dest = dest;
+        this.destIndex = destIndex;
         this.robot = robot;
     }
 
-    public synchronized Bicycle removeInspectedBicycle() throws InterruptedException {
-        while (true) {
-            // check if bicycle has arrived
-            if (bicycle != null) {
-                // check if inspection is finished on the bicycle
-                if (bicycle.isInspected()) {
-                    break;
-                }
-            }
-            Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for bicycle to be inspected");
-            wait();
-        }
-
-        Bicycle b = bicycle;
-        bicycle = null;
-        notifyAll();
-        return b;
+    /**
+     * Get the string representation of inspector
+     * @return          String representation of the inspector
+     */
+    public String toString() {
+        return "Inspector: [ " + (bicycle != null ? bicycle.toString() : "") + " ]";
     }
 
-    public synchronized void putBicycle(Bicycle bicycle) throws InterruptedException {
-        // wait until there's space for new bicycle
+    /**
+     *
+     * @param bicycle
+     *            the bicycle to be put into the inspector
+     * @param index
+     *            the index of inspector where bicycle is put,
+     *            supports only 0 since inspector contains only one bicycle
+     * @throws InterruptedException
+     */
+    @Override
+    public synchronized void put(Bicycle bicycle, int index) throws InterruptedException {
         while (this.bicycle != null) {
-            Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for space at inspector");
             wait();
         }
-
+        System.out.println(bicycle + " arrives at inspector");
         this.bicycle = bicycle;
         notifyAll();
     }
 
-
-    private synchronized void waitForBicycle() throws InterruptedException {
-        // wait for bicycle to come
-        while (true) {
-            if (bicycle == null) {
-                Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for bicycle arrive at inspector");
-                wait();
-            } else if (bicycle.isInspected()) {
-                Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " waits for inspected bicycle to removed");
-                wait();
-            } else {
-                break;
-            }
-        }
+    /**
+     *
+     * @param index
+     *            the index at which to peek,
+     *            supports only 0 since inspector contains only one bicycle
+     * @return
+     *            the bicycle at the index (or null if empty)
+     */
+    @Override
+    public Bicycle peek(int index) {
+        return bicycle;
     }
 
-    // inspect the bicycle, cannot be removed during the process
-    private synchronized void inspect(Bicycle bicycle) throws InterruptedException {
-        Sim.debugPrint("inspector starts inspecting");
-        Random random = new Random();
-        int sleepTime = random.nextInt(Params.INSPECT_TIME);
-        Thread.sleep(sleepTime);
-        if (!bicycle.isDefective()) {
-            bicycle.setNotTagged();
+    /**
+     *
+     * @param index
+     *            the index where bicycle is removed from container,
+     *            supports only 0 since inspector contains only one bicycle
+     * @return    the removed bicycle
+     * @throws InterruptedException
+     *            if the thread executing is interrupted
+     */
+    @Override
+    public synchronized Bicycle remove(int index) throws InterruptedException {
+        while (this.bicycle == null || !this.bicycle.isInspected()) {
+            wait();
         }
-        bicycle.setInspected(true);
-        System.out.println(indentation + "\u001B[32m" + bicycle + " inspected" + "\u001B[0m");
-        Sim.debugPrint("inspector finishes inspecting");
+        System.out.println(bicycle + " left inspector");
+        Bicycle bicycle = this.bicycle;
+        this.bicycle = null;
+        notifyAll();
+        return bicycle;
     }
 
-    public void run() {
-        Sim.debugPrint(BicycleHandlingThread.getCurrentThreadName() + " started");
-        while (!isInterrupted()) {
+    /**
+     * Gets the size of inspector
+     * @return   size of the inspector
+     */
+    @Override
+    public int length() {
+        return 1;
+    }
+
+    /**
+     * Do inspection on bicycle as soon as it arrives.
+     * When finished, call robot arm to move the bicycle to destination,
+     * and wait for the next bicycle to arrive
+     */
+    public synchronized void run() {
+        while (!interrupted()) {
             try {
-                waitForBicycle();
-                inspect(bicycle);
-                robot.moveBicycleFromInspectorToBelt();
+                // inspected bicycle should be removed already
+                if (bicycle != null) {
+                    assert (bicycle.isInspected());
+                }
+                // wait for new bicycle to arrive
+                while (bicycle == null) {
+                    wait();
+                }
+
+                // Start inspecting
+                Debug.println("started inspecting " + bicycle.toString());
+                sleep(Params.INSPECT_TIME);
+                bicycle.setInspected(true);
+                if (bicycle.isDefective()) {
+                    bicycle.setTagged();
+                } else {
+                    bicycle.setNotTagged();
+                }
+                Debug.println("finished inspecting " + bicycle.toString());
+                robot.pickBicycle(this, 0, dest, destIndex);
             } catch (InterruptedException e) {
                 this.interrupt();
-            } catch (OverloadException e) {
-                e.printStackTrace();
             }
         }
     }

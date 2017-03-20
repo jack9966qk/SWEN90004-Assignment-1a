@@ -94,3 +94,22 @@ States:
 	- Move belt (instant)
 
 
+
+
+Sensor designed to be a simple class. Observer pattern is preferred rather than a dedicated thread because sensor requires the belt to be locked during its process (determine whether a bicycle is tagged, if so, let the robot arm pick the bicycle). However this requires belt class to be changed to keep a reference of sensor.
+
+If detecting of tagged bicycle takes very long to finish, sensor will (unnecessarily) block producer and consumer, but it requires moving of belt to be locked, therefore having a separate thread doesn't help, as it needs to get lock of belt anyway.
+
+
+Solution 2: deadlock still exists if arm takes another bicycle when inspection not finished (inspector waits for arm, arm waits for inspector)
+
+
+Belt moves as often as possible
+	- wait for producer, consumer, sensor
+	- blocked by sensor activity (until bicycle removed from segment 3)
+
+sensor passively responding
+
+OK to have 2 consumers
+
+

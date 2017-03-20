@@ -9,12 +9,6 @@ public class Consumer extends BicycleHandlingThread {
     // the belt from which the consumer takes the bicycles
     protected Belt belt;
 
-    // TODO
-    public String getMyName() {
-        return "Consumer";
-    }
-
-
     /**
      * Create a new Consumer that consumes from a belt
      */
@@ -27,18 +21,17 @@ public class Consumer extends BicycleHandlingThread {
      * Loop indefinitely trying to get bicycles from the quality control belt
      */
     public void run() {
-        System.out.println(BicycleHandlingThread.getCurrentThreadName() + " started");
         while (!isInterrupted()) {
             try {
-                Bicycle b = belt.getEndBelt();
+                belt.getEndBelt();
 
-                // check if bicycle is correctly labeled and inspected
-                if (b.isDefective()) {
-                    assert (b.isTagged());
-                    assert (b.isInspected());
-                } else {
-                    assert(!b.isTagged());
-                }
+                // uncomment below to check safety (all tagged bicycle must be correctly inspected)
+//                Bicycle bicycle = belt.getEndBelt();
+//                // check bicycle properly inspected
+//                if (bicycle.isDefective()) {
+//                    assert(bicycle.isInspected());
+//                }
+//                assert(bicycle.isTagged() == bicycle.isDefective());
 
                 // let some time pass ...
                 Random random = new Random();

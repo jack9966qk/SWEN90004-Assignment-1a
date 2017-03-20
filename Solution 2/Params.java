@@ -6,22 +6,22 @@
 public class Params {
 
 	// the maximum amount of time the producer waits
-	public final static int PRODUCER_MAX_SLEEP = 3000 / 15;
+	public final static int PRODUCER_MAX_SLEEP = 3000;
 	
 	// the minimum amount of time the consumer waits
-	public final static int CONSUMER_MIN_SLEEP = 500 / 15;
+	public final static int CONSUMER_MIN_SLEEP = 500;
 	
 	// the maximum amount of time the consumer waits
-	public final static int CONSUMER_MAX_SLEEP = 2800 / 15;
+	public final static int CONSUMER_MAX_SLEEP = 2800;
 	
 	// the amount of time it takes to move the belt
-	public final static int BELT_MOVE_TIME = 900 / 15;
+	public final static int BELT_MOVE_TIME = 900;
 	
 	// the amount of time it takes the robot to move a bicycle
-	public final static int ROBOT_MOVE_TIME = 900 / 15;
+	public final static int ROBOT_MOVE_TIME = 900;
 	
 	// the amount of time it takes to inspect a bicycle
-	public final static int INSPECT_TIME = 5000 / 15;
+	public final static int INSPECT_TIME = 5000;
 		
 	// probability that a bicycle is tagged
 	public final static double TAG_PROB = 0.1;
